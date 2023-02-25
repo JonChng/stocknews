@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import dotenv
 import datetime as dt
+from twilio.rest import Client
 
 dotenv.load_dotenv()
 
@@ -40,11 +41,25 @@ if abs(change) >= 0:
     news_response.raise_for_status()
     data = news_response.json()
     articles = list(data['articles'][:3])
-    print(articles)
 
-## STEP 3: Use https://www.twilio.com
-# Send a seperate message with the percentage change and each article's title and description to your phone number. 
+    #Sending the message
+    account_sid = os.environ['TWILIO_ACCOUNT_SID']
+    auth_token = os.environ['TWILIO_AUTH_TOKEN']
+    client = Client(account_sid, auth_token)
 
+    message = client.messages \
+        .create(
+        body=f"{STOCK}: {round(change, 2)}%\n"
+             f"Headline 1: {articles[0]['title']}\n"
+             f"Link: {articles[0]['url']}\n\n"
+             f"Headline 2: {articles[1]['title']}\n"
+             f"Link: {articles[1]['url']}\n\n"
+             f"Headline 3: {articles[2]['title']}\n"
+             f"Link: {articles[2]['url']}\n\n",
+        from_=os.environ["TWILIO_NO"],
+        to=os.environ["MY_NO"]
+    )
+    print(message.status)
 
 #Optional: Format the SMS message like this: 
 """
