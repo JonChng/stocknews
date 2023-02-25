@@ -47,19 +47,16 @@ if abs(change) >= 0:
     auth_token = os.environ['TWILIO_AUTH_TOKEN']
     client = Client(account_sid, auth_token)
 
-    message = client.messages \
-        .create(
-        body=f"{STOCK}: {round(change, 2)}%\n"
-             f"Headline 1: {articles[0]['title']}\n"
-             f"Link: {articles[0]['url']}\n\n"
-             f"Headline 2: {articles[1]['title']}\n"
-             f"Link: {articles[1]['url']}\n\n"
-             f"Headline 3: {articles[2]['title']}\n"
-             f"Link: {articles[2]['url']}\n\n",
-        from_=os.environ["TWILIO_NO"],
-        to=os.environ["MY_NO"]
-    )
-    print(message.status)
+    for i in articles:
+        message = client.messages \
+            .create(
+            body=f"{STOCK}: {round(change, 2)}%\n"
+                 f"Headline: {i['title']}\n"
+                 f"Link: {i['url']}",
+            from_=os.environ["TWILIO_NO"],
+            to=os.environ["MY_NO"]
+        )
+        print(message.status)
 
 #Optional: Format the SMS message like this: 
 """
