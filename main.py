@@ -4,39 +4,43 @@ import os
 import dotenv
 import datetime as dt
 
-yesterday = str(dt.date.today() - dt.timedelta(days=1))
-yesterday_closing = yesterday + " 20:00:00"
-
-day_before = str(dt.date.today() - dt.timedelta(days=2))
-day_before_closing = day_before + " 20:00:00"
-
-
 dotenv.load_dotenv()
 
 STOCK = "TSLA"
-COMPANY_NAME = "Tesla Inc"
+COMPANY_NAME = "Tesla"
 
 ## STEP 1: Use https://www.alphavantage.co
 # When STOCK price increase/decreases by 5% between yesterday and the day before yesterday then print("Get News").
 URL = "https://www.alphavantage.co/query"
-params = {
+params_stock = {
     "function":"TIME_SERIES_INTRADAY",
     "symbol":STOCK,
     "interval":"60min",
     "apikey":os.environ["ALPHAVANTAGE_API_KEY"]
 }
 
-response = requests.get(url=URL, params=params)
+response = requests.get(url=URL, params=params_stock)
 response.raise_for_status()
 data = response.json()
-data_yesterday = float(data["Time Series (60min)"][yesterday_closing]["4. close"])
-data_day_before = float(data["Time Series (60min)"][day_before_closing]["4. close"])
+last_refresh = data['Meta Data']["3. Last Refreshed"]
+date_time_obj = dt.datetime.strptime(last_refresh, '%Y-%m-%d %H:%M:%S')
+day_before = date_time_obj - dt.timedelta(days=1)
+
+data_yesterday = float(data["Time Series (60min)"][last_refresh]["4. close"])
+data_day_before = float(data["Time Series (60min)"][str(day_before)]["4. close"])
 
 change = (data_yesterday - data_day_before)/data_yesterday * 100
 
 
 ## STEP 2: Use https://newsapi.org
-# Instead of printing ("Get News"), actually get the first 3 news pieces for the COMPANY_NAME. 
+# Instead of printing ("Get News"), actually get the first 3 news pieces for the COMPANY_NAME.
+if abs(change) >= 0:
+    url = f"https://newsapi.org/v2/everything?q={COMPANY_NAME}&from={last_refresh}&sortBy=popularity&apiKey={os.environ['NEWS_API']}"
+    news_response = requests.get(url)
+    news_response.raise_for_status()
+    data = news_response.json()
+    articles = list(data['articles'][:3])
+    print(articles)
 
 ## STEP 3: Use https://www.twilio.com
 # Send a seperate message with the percentage change and each article's title and description to your phone number. 
